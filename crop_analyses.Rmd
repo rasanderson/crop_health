@@ -1,0 +1,203 @@
+---
+title: "Crop data analyses"
+author: "Roy Sanderson"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+Dave needs separate analyses each year
+
+In the Excel spreadsheet "CHN 2018 and 2019 data all sites.xlsx" under "Crop data 2018" and "Crop data 2019" columns D to H are key response variables. %N is not available for some entries. GLA is green leave area.
+
+The other spreadsheet "CHN 2020 STC data including N rates.xlsx" has plot numbers (it actually is a randomised block design although isn't coded as such), yield and quality, and NIAB assessments.
+
+
+```{r, crop data 2018 and 2019}
+library(tidyverse)
+library(readxl)
+
+crop_data_2018 <- read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                              sheet = "Crop data 2018",
+                              skip = 4,
+                              na = "-")
+colnames(crop_data_2018) <- c("farm", "treatment", "variety", "yield",
+                              "sp_wght", "moisture", "N", "protein", "GLA")
+crop_data_2018$farm[crop_data_2018$farm == 1] <- "stc"
+crop_data_2018$farm[crop_data_2018$farm == 2] <- "nafferton"
+crop_data_2018$farm[crop_data_2018$farm == 3] <- "cockle"
+crop_data_2018$farm <- as.factor(crop_data_2018$farm)
+crop_data_2018$treatment[crop_data_2018$treatment == 1] <- "bio"
+crop_data_2018$treatment[crop_data_2018$treatment == 2] <- "ipm"
+crop_data_2018$treatment[crop_data_2018$treatment == 3] <- "conv"
+crop_data_2018$treatment <- as.factor(crop_data_2018$treatment)
+crop_data_2018$variety[crop_data_2018$variety == 1] <- "leeds"
+crop_data_2018$variety[crop_data_2018$variety == 2] <- "skyfall"
+crop_data_2018$variety <- as.factor(crop_data_2018$variety)
+
+crop_data_2019 <- read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                              sheet = "Crop data 2019",
+                              skip = 4,
+                              na = "-")
+colnames(crop_data_2019) <- c("farm", "treatment", "variety", "yield",
+                              "sp_wght", "moisture", "N", "protein", "GLA")
+crop_data_2019$farm[crop_data_2019$farm == 1] <- "stc"
+crop_data_2019$farm[crop_data_2019$farm == 2] <- "cockle"
+crop_data_2019$farm <- as.factor(crop_data_2019$farm)
+crop_data_2019$treatment[crop_data_2019$treatment == 1] <- "bio"
+crop_data_2019$treatment[crop_data_2019$treatment == 2] <- "ipm"
+crop_data_2019$treatment[crop_data_2019$treatment == 3] <- "conv"
+crop_data_2019$treatment <- as.factor(crop_data_2019$treatment)
+crop_data_2019$variety[crop_data_2019$variety == 1] <- "sundance"
+crop_data_2019$variety <- as.factor(crop_data_2019$variety)
+
+```
+
+```{r, disease data 2018-2019}
+# Trickier as multiple spreadsheets and duplicate column names
+# STC first
+snake_case <- function(nms) tolower(gsub("[.]", "_", nms))
+gs <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease STC 2018",
+                           skip = 3,
+                           n_max = 0,
+                           .name_repair = "universal"
+                  ))
+gs <- snake_case(gs)
+gs <- str_replace_all(gs, "___", "_")
+di <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease STC 2018",
+                           skip = 4,
+                           n_max = 0,
+                           .name_repair = "universal",
+                           range = "C5:L5"
+                  ))
+di <- snake_case(di)
+di <- str_replace_all(di, "___", "_")
+di <- str_replace_all(di, "__", "")
+gs_di <- str_c(gs, di, sep="_")
+
+
+disease_stc_2018 <- read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                                sheet = "Disease STC 2018",
+                                skip = 4,
+                                na = "-")
+colnames(disease_stc_2018) <- c("treatment", "variety", gs_di)
+disease_stc_2018$treatment[disease_stc_2018$treatment == 1] <- "bio"
+disease_stc_2018$treatment[disease_stc_2018$treatment == 2] <- "ipm"
+disease_stc_2018$treatment[disease_stc_2018$treatment == 3] <- "conv"
+disease_stc_2018$treatment <- as.factor(disease_stc_2018$treatment)
+disease_stc_2018$variety[disease_stc_2018$variety == 1] <- "leeds"
+disease_stc_2018$variety[disease_stc_2018$variety == 2] <- "skyfall"
+disease_stc_2018$variety <- as.factor(disease_stc_2018$variety)
+disease_stc_2018$farm <- "stc"
+
+# Format not quite the same for Nafferton and Cockle Park
+gs <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease CP and Naff 2018",
+                           skip = 3,
+                           n_max = 0,
+                           .name_repair = "universal"
+                  ))
+gs <- snake_case(gs)
+gs <- str_replace_all(gs, "___", "_")
+di <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease CP and Naff 2018",
+                           skip = 4,
+                           n_max = 0,
+                           .name_repair = "universal",
+                           range = "D5:G5"
+                  ))
+di <- snake_case(di)
+di <- str_replace_all(di, "___", "_")
+di <- str_replace_all(di, "__", "")
+gs_di <- str_c(gs, di, sep="_")
+disease_cpnf_2018 <- read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                                sheet = "Disease CP and Naff 2018",
+                                skip = 4,
+                                na = "-")
+colnames(disease_cpnf_2018) <- c("farm", "treatment", "variety", gs_di)
+disease_cpnf_2018$farm[disease_cpnf_2018$farm == 1] <- "nafferton"
+disease_cpnf_2018$farm[disease_cpnf_2018$farm == 2] <- "cockle"
+disease_cpnf_2018$farm <- as.factor(disease_cpnf_2018$farm)
+disease_cpnf_2018$treatment[disease_cpnf_2018$treatment == 1] <- "bio"
+disease_cpnf_2018$treatment[disease_cpnf_2018$treatment == 2] <- "ipm"
+disease_cpnf_2018$treatment[disease_cpnf_2018$treatment == 3] <- "conv"
+disease_cpnf_2018$treatment <- as.factor(disease_cpnf_2018$treatment)
+disease_cpnf_2018$variety[disease_cpnf_2018$variety == 1] <- "leeds"
+disease_cpnf_2018$variety[disease_cpnf_2018$variety == 2] <- "skyfall"
+disease_cpnf_2018$variety <- as.factor(disease_cpnf_2018$variety)
+
+
+# Format again different for 2019 at only 2 sites
+# STC 2019 disease
+gs <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease STC 2019 (standard N)",
+                           skip = 3,
+                           n_max = 0,
+                           .name_repair = "universal"
+                  ))
+gs <- snake_case(gs)
+gs <- str_replace_all(gs, "___", "_")
+di <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease STC 2019 (standard N)",
+                           skip = 4,
+                           n_max = 0,
+                           .name_repair = "universal",
+                           range = "B5:C5"
+                  ))
+di <- snake_case(di)
+di <- str_replace_all(di, "___", "_")
+di <- str_replace_all(di, "__", "")
+gs_di <- str_c(gs, di, sep="_")
+disease_stc_2019 <- read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                                sheet = "Disease STC 2019 (standard N)",
+                                skip = 4,
+                                na = "-")
+colnames(disease_stc_2019) <- c("treatment", gs_di)
+disease_stc_2019$farm <- "stc"
+disease_stc_2019$variety <- "sundance"
+disease_stc_2019$treatment[disease_stc_2019$treatment == 1] <- "bio"
+disease_stc_2019$treatment[disease_stc_2019$treatment == 2] <- "ipm"
+disease_stc_2019$treatment[disease_stc_2019$treatment == 3] <- "conv"
+disease_stc_2019$treatment <- as.factor(disease_stc_2019$treatment)
+
+
+# Cockle Park 2019 disease
+gs <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease CP 2019",
+                           skip = 3,
+                           n_max = 0,
+                           .name_repair = "universal"
+                  ))
+gs <- snake_case(gs)
+gs <- str_replace_all(gs, "___", "_")
+di <-  colnames(read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                           sheet = "Disease CP 2019",
+                           skip = 4,
+                           n_max = 0,
+                           .name_repair = "universal",
+                           range = "B5:C5"
+                  ))
+di <- snake_case(di)
+di <- str_replace_all(di, "___", "_")
+di <- str_replace_all(di, "__", "")
+gs_di <- str_c(gs, di, sep="_")
+disease_cp_2019 <- read_excel("data/CHN 2018 and 2019 data all sites.xlsx",
+                                sheet = "Disease CP 2019",
+                                skip = 4,
+                                na = "-")
+colnames(disease_cp_2019) <- c("treatment", gs_di)
+disease_cp_2019$farm <- "cp"
+disease_cp_2019$variety <- "sundance" # Not stated, but taken from crop data
+disease_cp_2019$treatment[disease_cp_2019$treatment == 1] <- "bio"
+disease_cp_2019$treatment[disease_cp_2019$treatment == 2] <- "ipm"
+disease_cp_2019$treatment[disease_cp_2019$treatment == 3] <- "conv"
+disease_cp_2019$treatment <- as.factor(disease_cp_2019$treatment)
+
+
+```
+
