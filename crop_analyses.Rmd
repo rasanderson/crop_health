@@ -6,6 +6,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+source("multi_plot.R")
 ```
 
 ## Background
@@ -16,7 +17,7 @@ In the Excel spreadsheet "CHN 2018 and 2019 data all sites.xlsx" under "Crop dat
 The other spreadsheet "CHN 2020 STC data including N rates.xlsx" has plot numbers (it actually is a randomised block design although isn't coded as such), yield and quality, and NIAB assessments.
 
 
-```{r, crop data 2018 and 2019}
+```{r crop data 2018 and 2019, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(readxl)
 
@@ -56,7 +57,7 @@ crop_data_2019$variety <- as.factor(crop_data_2019$variety)
 
 ```
 
-```{r, disease data 2018-2019}
+```{r disease data 2018-2019, echo=FALSE, message=FALSE}
 # Trickier as multiple spreadsheets and duplicate column names
 # STC first
 snake_case <- function(nms) tolower(gsub("[.]", "_", nms))
@@ -203,7 +204,7 @@ disease_cp_2019$treatment <- as.factor(disease_cp_2019$treatment)
 
 Data are a bit of a mess, especially disease. Probably sensible to convert everything to tidy format to make easier to manage.
 
-```{r disease tidy 2018}
+```{r disease tidy 2018, echo=FALSE, message=FALSE}
 disease_cpnf_2018_lng <- pivot_longer(disease_cpnf_2018,
                                       cols = starts_with("gs"),
                                       names_to = "gsdis",
@@ -231,7 +232,7 @@ disease_2018 <- rbind(disease_cpnf_2018_lng, disease_stc_2018_lng)
 
 Do the same for 2019
 
-```{r disease tidy 2019}
+```{r disease tidy 2019, echo=FALSE, message=FALSE}
 disease_cp_2019_lng <- pivot_longer(disease_cp_2019,
                                       cols = starts_with("gs"),
                                       names_to = "gsdis",
@@ -259,7 +260,57 @@ disease_2019 <- rbind(disease_cp_2019_lng, disease_stc_2019_lng)
 
 May as well merge into one data.frame for both years if needed
 
-```{r, merge disease years}
+```{r merge disease years, echo=FALSE, message=FALSE}
 disease <- rbind(disease_2018, disease_2019)
+```
+
+
+
+## Basic crop graphs
+Check on patterns in crops
+
+```{r crop graphs basics, echo=FALSE, message=FALSE}
+p1 <- ggplot(crop_data_2018, aes(x = farm, y=yield, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Yield 2018")
+p2 <- ggplot(crop_data_2019, aes(x = farm, y=yield, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Yield 2019")
+multiplot(p1, p2, cols=2)
+
+p1 <- ggplot(crop_data_2018, aes(x = farm, y=sp_wght, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Specific weight 2018")
+p2 <- ggplot(crop_data_2019, aes(x = farm, y=sp_wght, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Specific weight 2019")
+multiplot(p1, p2, cols=2)
+
+p1 <- ggplot(crop_data_2018, aes(x = farm, y=moisture, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Grain moisture content 2018")
+p2 <- ggplot(crop_data_2019, aes(x = farm, y=moisture, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Grain moisture content 2019")
+multiplot(p1, p2, cols=2)
+
+p1 <- ggplot(crop_data_2018, aes(x = farm, y=N, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Grain nitrogen content 2018")
+p2 <- filter(crop_data_2019, farm == "stc") %>% 
+  ggplot(aes(x = farm, y=N, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Grain nitrogen content 2019")
+multiplot(p1, p2, cols=2)
+
+p1 <- ggplot(crop_data_2018, aes(x = farm, y=protein, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Grain protein content 2018")
+p2 <- ggplot(crop_data_2019, aes(x = farm, y=protein, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Grain protein content 2019")
+multiplot(p1, p2, cols=2)
+
+
 ```
 
