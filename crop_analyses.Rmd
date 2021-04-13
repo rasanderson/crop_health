@@ -201,3 +201,65 @@ disease_cp_2019$treatment <- as.factor(disease_cp_2019$treatment)
 
 ```
 
+Data are a bit of a mess, especially disease. Probably sensible to convert everything to tidy format to make easier to manage.
+
+```{r disease tidy 2018}
+disease_cpnf_2018_lng <- pivot_longer(disease_cpnf_2018,
+                                      cols = starts_with("gs"),
+                                      names_to = "gsdis",
+                                      values_to = "severity")
+disease_stc_2018_lng <- pivot_longer(disease_stc_2018,
+                                      cols = starts_with("gs"),
+                                      names_to = "gsdis",
+                                      values_to = "severity")
+
+# Deconstruct growth stages and diseases
+disease_cpnf_2018_lng <- disease_cpnf_2018_lng %>%
+  mutate(gs = as.numeric(str_sub(gsdis, 4, 5)),
+         pathogen = str_extract(gsdis, "mildew|septoria"),
+         year = 2018) %>% 
+  select(-gsdis)
+
+disease_stc_2018_lng <- disease_stc_2018_lng %>%
+  mutate(gs = as.numeric(str_sub(gsdis, 4, 5)),
+         pathogen = str_extract(gsdis, "mildew|septoria"),
+         year = 2018) %>% 
+  select(-gsdis)
+       
+disease_2018 <- rbind(disease_cpnf_2018_lng, disease_stc_2018_lng)
+```
+
+Do the same for 2019
+
+```{r disease tidy 2019}
+disease_cp_2019_lng <- pivot_longer(disease_cp_2019,
+                                      cols = starts_with("gs"),
+                                      names_to = "gsdis",
+                                      values_to = "severity")
+disease_stc_2019_lng <- pivot_longer(disease_stc_2019,
+                                      cols = starts_with("gs"),
+                                      names_to = "gsdis",
+                                      values_to = "severity")
+
+# Deconstruct growth stages and diseases
+disease_cp_2019_lng <- disease_cp_2019_lng %>%
+  mutate(gs = as.numeric(str_sub(gsdis, 3, 4)), # Not the same as before
+         pathogen = str_extract(gsdis, "mildew|septoria"),
+         year = 2019) %>% 
+  select(-gsdis)
+
+disease_stc_2019_lng <- disease_stc_2019_lng %>%
+  mutate(gs = as.numeric(str_sub(gsdis, 4, 5)),
+         pathogen = str_extract(gsdis, "mildew|septoria"),
+         year = 2019) %>% 
+  select(-gsdis)
+       
+disease_2019 <- rbind(disease_cp_2019_lng, disease_stc_2019_lng)
+```
+
+May as well merge into one data.frame for both years if needed
+
+```{r, merge disease years}
+disease <- rbind(disease_2018, disease_2019)
+```
+
