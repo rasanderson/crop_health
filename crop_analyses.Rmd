@@ -395,3 +395,101 @@ lme_summary(formula(protein ~ treatment), data=crop_data_2018)
 ```{r echo=FALSE}
 lme_summary(formula(protein ~ treatment), data=crop_data_2019)
 ```
+
+## STC 2020 data analysis
+This is for the data in the "CHN 2020 STC data including N rates.xlsx" spreadsheet.
+
+```{r read in STC data for 2020 block expt}
+yield_quality <- read_excel("data/CHN 2020 STC data including N rates.xlsx",
+                              sheet = "YIELD & QUALITY",
+                              skip = 6,
+                              range = "A7:Q43",
+                              na = "-")
+colnames(yield_quality) <- c("plot", "treatment", "N", "yield", "lodging", "brackling",
+                             "moisture", "dm", "sp_wght", "tgw", "n_content",
+                             "protein_content", "grain_2.8", "grain_2.5_2.8",
+                             "grain_2.2_2.5", "grain_2.0_2.2", "grain_2.0")
+# Need to allocate block numbers to plots; These are not 'true' blocks as they
+# are not independent of N applications, so probably best ignored for analysis
+yield_quality$block <- NA
+yield_quality$block[yield_quality$plot %in% 1:3] <- "1"
+yield_quality$block[yield_quality$plot %in% 4:6] <- "2"
+yield_quality$block[yield_quality$plot %in% 7:9] <- "3"
+yield_quality$block[yield_quality$plot %in% 10:12] <- "4"
+yield_quality$block[yield_quality$plot %in% 13:15] <- "1"
+yield_quality$block[yield_quality$plot %in% 16:18] <- "2"
+yield_quality$block[yield_quality$plot %in% 19:21] <- "3"
+yield_quality$block[yield_quality$plot %in% 22:24] <- "4"
+yield_quality$block[yield_quality$plot %in% 25:27] <- "1"
+yield_quality$block[yield_quality$plot %in% 28:30] <- "2"
+yield_quality$block[yield_quality$plot %in% 31:33] <- "3"
+yield_quality$block[yield_quality$plot %in% 34:36] <- "4"
+yield_quality$block <- as.factor(yield_quality$block)
+
+yield_quality$treatment[yield_quality$treatment == 1] <- "bio"
+yield_quality$treatment[yield_quality$treatment == 2] <- "ipm"
+yield_quality$treatment[yield_quality$treatment == 3] <- "conv"
+yield_quality$treatment <- as.factor(yield_quality$treatment)
+
+# Disease data for 2020
+# Growth stages
+gs_names <- read_excel("data/CHN 2020 STC data including N rates.xlsx",
+                              sheet = "DISEASE ASSESSMENTS",
+                              skip = 4,
+                              range = "D5:W5",
+                              na = "-")
+gs_names <- colnames(gs_names)
+curr_name <- gs_names[1]
+for (i in 1:length(gs_names)){
+  if(str_sub(gs_names[i], 1, 3) == "..."){
+    gs_names[i] <- curr_name
+  } else {
+    curr_name <- gs_names[i]
+  }
+}
+str_sub(gs_names, 3, 3) <- ""
+
+# Dates
+date_names <- read_excel("data/CHN 2020 STC data including N rates.xlsx",
+                              sheet = "DISEASE ASSESSMENTS",
+                              skip = 5,
+                              range = "D6:W6",
+                              na = "-")
+date_names <- colnames(date_names)
+date_name <- date_names[1]
+for (i in 1:length(date_names)){
+  if(str_sub(date_names[i], 1, 3) == "..."){
+    date_names[i] <- curr_name
+  } else {
+    curr_name <- date_names[i]
+  }
+}
+str_sub(date_names, 3, 3) <- ""
+date_names <- as.Date(as.numeric(date_names), origin="2008-06-01") # origin trial and error
+
+# Actual disease data
+disease_raw <- read_excel("data/CHN 2020 STC data including N rates.xlsx",
+                          sheet = "DISEASE ASSESSMENTS",
+                          skip = 6,
+                          na = "-",
+                          .name_repair = "universal")
+di <- snake_case(colnames(disease_raw) <- str_to_lower(colnames(disease_raw)))
+di <- str_replace_all(di, "_____", "")
+di <- str_replace_all(di, "____", "")
+di <- str_replace_all(di, "__", "")
+di <- str_replace_all(di, "_", "")
+
+da_gs_di <- str_c(date_names, gs_names, di[-(1:3)])
+
+colnames(disease_raw) <- c(di[1:3], da_gs_di)
+
+# Convert to long format
+disease_lng <- pivot_longer(disease_raw,
+                            cols = 4:23,
+                            names_to = "health",
+                            values_to = "pcnt")
+disease_lng$date <- as.Date(str_sub(disease_lng$health, 1, 10))
+disease_lng$gs   <- as.factor(str_sub(disease_lng$health, 11, 14))
+disease_lng$health <- str_extract(disease_lng$health, "septoria|mildew|yellowrust|flaggla|greenleafarea|cropheightcm")
+```
+
