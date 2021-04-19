@@ -1,7 +1,10 @@
 ---
 title: "Crop data analyses"
 author: "Roy Sanderson"
-output: html_document
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -399,7 +402,7 @@ lme_summary(formula(protein ~ treatment), data=crop_data_2019)
 ## STC 2020 data analysis
 This is for the data in the "CHN 2020 STC data including N rates.xlsx" spreadsheet.
 
-```{r read in STC data for 2020 block expt}
+```{r read in STC data for 2020 block expt, echo=FALSE, message=FALSE}
 yield_quality <- read_excel("data/CHN 2020 STC data including N rates.xlsx",
                               sheet = "YIELD & QUALITY",
                               skip = 6,
@@ -430,6 +433,7 @@ yield_quality$treatment[yield_quality$treatment == 1] <- "bio"
 yield_quality$treatment[yield_quality$treatment == 2] <- "ipm"
 yield_quality$treatment[yield_quality$treatment == 3] <- "conv"
 yield_quality$treatment <- as.factor(yield_quality$treatment)
+yield_quality$N <- as.factor(yield_quality$N) # Excel unclear on exact amounts
 
 # Disease data for 2020
 # Growth stages
@@ -492,4 +496,69 @@ disease_lng$date <- as.Date(str_sub(disease_lng$health, 1, 10))
 disease_lng$gs   <- as.factor(str_sub(disease_lng$health, 11, 14))
 disease_lng$health <- str_extract(disease_lng$health, "septoria|mildew|yellowrust|flaggla|greenleafarea|cropheightcm")
 ```
+
+### Broad patterns in crop yield and quality
+General patterns for STC 2020 crop data. Lodging figures not shown as nearly all values are zero. Nitrogen has been coded as 1, 2 or 3 as actual applications in spreadsheet do not agree between the "TRIAL LAYOUT" vs the "YIELD & QUALITY" or "DISEASE ASSESSMENT" tabs.
+
+```{r, echo = FALSE}
+p1 <- ggplot(yield_quality, aes(x = treatment, y=yield, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Grain yield (t/ha)")
+p2 <- ggplot(yield_quality, aes(x = treatment, y=lodging, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Root lodging (%)")
+p3 <- ggplot(yield_quality, aes(x = treatment, y=brackling, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Brackling (%)")
+p4 <- ggplot(yield_quality, aes(x = treatment, y=moisture, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Moisture (%)")
+p5 <- ggplot(yield_quality, aes(x = treatment, y=dm, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Dry matter (%)")
+
+multiplot(p1, p3, p4, p5, cols=2)
+```
+
+General patterns for some additional information on grain chemistry collected by NIAB.
+
+```{r, echo = FALSE}
+p1 <- ggplot(yield_quality, aes(x = treatment, y=sp_wght, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Specific weight (kg/hl)")
+p2 <- ggplot(yield_quality, aes(x = treatment, y=tgw, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Thousand grain weight (g)")
+p3 <- ggplot(yield_quality, aes(x = treatment, y=n_content, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Nitrogen content (g/100g)")
+p4 <- ggplot(yield_quality, aes(x = treatment, y=protein_content, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Protein content (g/100g)")
+
+multiplot(p1, p2, p3, p4, cols=2)
+```
+
+Physical characteristics of harvested grain measured by NIAB
+
+```{r, echo = FALSE}
+p1 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.8, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Grain >2.8 mm")
+p2 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.5_2.8, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Grain 2.5-2.8 mm")
+p3 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.2_2.5, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Grain 2.2-2.5 mm")
+p4 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.0_2.2, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Grain 2.0-2.2 mm")
+p5 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.0, colour=N)) +
+  geom_boxplot() +
+  ggtitle("Grain <2.0 mm")
+
+multiplot(p1, p3, p5, p2, p4, cols=2)
+```
+
 
