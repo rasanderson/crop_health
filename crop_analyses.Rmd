@@ -319,24 +319,14 @@ multiplot(p1, p2, cols=2)
 Treat farm as a random variable, as presumably it is treatment effects that are of interest.
 
 ```{r mixed models}
-library(MASS)
+library(nlme)
 library(multcomp)
-yield_2018_glmm <- glmmPQL(yield ~ treatment, random = ~ 1 | farm,
-                           family = gaussian, data=crop_data_2018)
-summary(yield_2018_glmm)
-summary(glht(yield_2018_glmm, linfct = mcp(treatment = "Tukey")))
-confint(glht(yield_2018_glmm, linfct = mcp(treatment = "Tukey")))
-
-yield_2018_nlme <- nlme::lme(yield ~ treatment, random = ~ 1 | farm,
-                            data=crop_data_2018)
-summary(yield_2018_nlme)
-summary(glht(yield_2018_nlme, linfct = mcp(treatment = "Tukey")))
-confint(glht(yield_2018_nlme, linfct = mcp(treatment = "Tukey")))
-
-yield_2018_lmer <- lme4::glmer(yield ~ treatment + (1|farm),
-                              family = gaussian, data=crop_data_2018)
-summary(yield_2018_lmer)
-summary(glht(yield_2018_lmer, linfct = mcp(treatment = "Tukey")))
+library(effects)
+yield_2018_lme <- lme(yield ~ treatment, random = ~ 1 | farm, data=crop_data_2018)
+summary(yield_2018_lme)
+summary(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey")))
+confint(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey")))
+#plot(allEffects(yield_2018_lme), lines=list(col="black"))
 
 ```
 
