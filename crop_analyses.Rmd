@@ -2,9 +2,9 @@
 title: "Crop data analyses"
 author: "Roy Sanderson"
 output:
-  pdf_document: default
-  word_document: default
   html_document: default
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,12 +13,9 @@ source("multi_plot.R")
 ```
 
 ## Background
-Dave needs separate analyses each year
+Analyses for the "CHN 2020 STC data including N rates.xlsx" spreadsheet separated by year (2018 or 2019) and use farm as a random effect. Multiple comparison tests also included to show differences between management treatments.
 
-In the Excel spreadsheet "CHN 2018 and 2019 data all sites.xlsx" under "Crop data 2018" and "Crop data 2019" columns D to H are key response variables. %N is not available for some entries. GLA is green leave area.
-
-The other spreadsheet "CHN 2020 STC data including N rates.xlsx" has plot numbers (it actually is a randomised block design although isn't coded as such), yield and quality, and NIAB assessments.
-
+For the data in "CHN 2020 STC data including N rates.xlsx" the design is vaguely like a randomised-block design, in that each column of 3 plots has all three management types randomly assigned. However, the nitrogen treatments are applied in a line. Thus, if the analysis is done separately, for each N treatment, it could be analysed as a randomised block design. However, I'm assuming that both N and management regime (bio, ipm, conv) are of interest. As such, this is not a true randomised block design, and therefore this has been analysed as a fully-randomised setup. However the growth stage (date) can be used as a random effect. As the last growth stage (GS89, 30th July 2020) merely records height, this has been ignored.
 
 ```{r crop data 2018 and 2019, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -493,27 +490,35 @@ disease_lng <- pivot_longer(disease_raw,
                             names_to = "health",
                             values_to = "pcnt")
 disease_lng$date <- as.Date(str_sub(disease_lng$health, 1, 10))
-disease_lng$gs   <- as.factor(str_sub(disease_lng$health, 11, 14))
-disease_lng$health <- str_extract(disease_lng$health, "septoria|mildew|yellowrust|flaggla|greenleafarea|cropheightcm")
+disease_lng$gs   <- str_sub(disease_lng$health, 11, 14)
+disease_lng$health <- str_extract(disease_lng$health, "septoria|mildew|yellowrust|flaggla|greenleafarea")
+colnames(disease_lng)[3] <- "N"  # be consistent with earlier
+disease_lng$N <- as.factor(disease_lng$N)
+disease_lng$treatment[disease_lng$treatment == 1] <- "bio"
+disease_lng$treatment[disease_lng$treatment == 2] <- "ipm"
+disease_lng$treatment[disease_lng$treatment == 3] <- "conv"
+
+# Not interested in GS89 as only contains height
+disease_lng <- filter(disease_lng, gs != "GS89")
 ```
 
 ### Broad patterns in crop yield and quality
 General patterns for STC 2020 crop data. Lodging figures not shown as nearly all values are zero. Nitrogen has been coded as 1, 2 or 3 as actual applications in spreadsheet do not agree between the "TRIAL LAYOUT" vs the "YIELD & QUALITY" or "DISEASE ASSESSMENT" tabs.
 
 ```{r, echo = FALSE}
-p1 <- ggplot(yield_quality, aes(x = treatment, y=yield, colour=N)) +
+p1 <- ggplot(yield_quality, aes(x = N, y=yield, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Grain yield (t/ha)")
-p2 <- ggplot(yield_quality, aes(x = treatment, y=lodging, colour=N)) +
+p2 <- ggplot(yield_quality, aes(x = N, y=lodging, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Root lodging (%)")
-p3 <- ggplot(yield_quality, aes(x = treatment, y=brackling, colour=N)) +
+p3 <- ggplot(yield_quality, aes(x = N, y=brackling, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Brackling (%)")
-p4 <- ggplot(yield_quality, aes(x = treatment, y=moisture, colour=N)) +
+p4 <- ggplot(yield_quality, aes(x = N, y=moisture, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Moisture (%)")
-p5 <- ggplot(yield_quality, aes(x = treatment, y=dm, colour=N)) +
+p5 <- ggplot(yield_quality, aes(x = N, y=dm, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Dry matter (%)")
 
@@ -523,16 +528,16 @@ multiplot(p1, p3, p4, p5, cols=2)
 General patterns for some additional information on grain chemistry collected by NIAB.
 
 ```{r, echo = FALSE}
-p1 <- ggplot(yield_quality, aes(x = treatment, y=sp_wght, colour=N)) +
+p1 <- ggplot(yield_quality, aes(x = N, y=sp_wght, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Specific weight (kg/hl)")
-p2 <- ggplot(yield_quality, aes(x = treatment, y=tgw, colour=N)) +
+p2 <- ggplot(yield_quality, aes(x = N, y=tgw, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Thousand grain weight (g)")
-p3 <- ggplot(yield_quality, aes(x = treatment, y=n_content, colour=N)) +
+p3 <- ggplot(yield_quality, aes(x = N, y=n_content, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Nitrogen content (g/100g)")
-p4 <- ggplot(yield_quality, aes(x = treatment, y=protein_content, colour=N)) +
+p4 <- ggplot(yield_quality, aes(x = N, y=protein_content, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Protein content (g/100g)")
 
@@ -542,23 +547,79 @@ multiplot(p1, p2, p3, p4, cols=2)
 Physical characteristics of harvested grain measured by NIAB
 
 ```{r, echo = FALSE}
-p1 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.8, colour=N)) +
+p1 <- ggplot(yield_quality, aes(x = N, y=grain_2.8, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Grain >2.8 mm")
-p2 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.5_2.8, colour=N)) +
+p2 <- ggplot(yield_quality, aes(x = N, y=grain_2.5_2.8, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Grain 2.5-2.8 mm")
-p3 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.2_2.5, colour=N)) +
+p3 <- ggplot(yield_quality, aes(x = N, y=grain_2.2_2.5, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Grain 2.2-2.5 mm")
-p4 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.0_2.2, colour=N)) +
+p4 <- ggplot(yield_quality, aes(x = N, y=grain_2.0_2.2, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Grain 2.0-2.2 mm")
-p5 <- ggplot(yield_quality, aes(x = treatment, y=grain_2.0, colour=N)) +
+p5 <- ggplot(yield_quality, aes(x = N, y=grain_2.0, colour=treatment)) +
   geom_boxplot() +
   ggtitle("Grain <2.0 mm")
 
 multiplot(p1, p3, p5, p2, p4, cols=2)
 ```
 
+### Broad patterns in disease at STC 2020
+These data could be plotted for each growth stage, although that would be quite over-whelming in terms of numbers of graphs. These are for GS71, i.e. 10th July 2020.
+
+```{r, echo=FALSE, message=FALSE}
+p1 <- filter(disease_lng, health == "septoria" & gs == "GS71") %>% 
+  ggplot(aes(x = N, y=pcnt, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Septoria (%)")
+p2 <- filter(disease_lng, health == "yellowrust" & gs == "GS71") %>% 
+  ggplot(aes(x = N, y=pcnt, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Yellow rust (%)")
+p3 <- filter(disease_lng, health == "mildew" & gs == "GS71") %>% 
+  ggplot(aes(x = N, y=pcnt, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Mildew (%)")
+p4 <- filter(disease_lng, health == "greenleafarea" & gs == "GS71") %>% 
+  ggplot(aes(x = N, y=pcnt, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Green leaf area (%)")
+
+multiplot(p1, p2, p3, p4, cols=2)
+```
+
+Changes over time
+
+```{r}
+tmp <- filter(disease_lng, health == "septoria") %>%
+  group_by(treatment, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p1 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=treatment)) +
+  geom_point() +
+  geom_line() + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5))
+
+tmp <- filter(disease_lng, health == "septoria") %>%
+  group_by(N, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p2 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=N)) +
+  geom_point() +
+  geom_line() + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5))
+multiplot(p1, p2, cols=2)
+```
 
