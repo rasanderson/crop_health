@@ -318,15 +318,80 @@ multiplot(p1, p2, cols=2)
 ## Linear mixed models
 Treat farm as a random variable, as presumably it is treatment effects that are of interest.
 
-```{r mixed models}
+### Yield
+#### Yield 2018
+```{r mixed models, echo=FALSE, warning=FALSE, message=FALSE}
 library(nlme)
 library(multcomp)
 library(effects)
 yield_2018_lme <- lme(yield ~ treatment, random = ~ 1 | farm, data=crop_data_2018)
 summary(yield_2018_lme)
 summary(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey")))
-confint(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey")))
+#cints <- (confint(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey"))))[[10]]
+#data.frame(cints) # Neater printing
 #plot(allEffects(yield_2018_lme), lines=list(col="black"))
-
 ```
 
+#### Yield 2019
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+yield_2019_lme <- lme(yield ~ treatment, random = ~ 1 | farm, data=crop_data_2019)
+summary(yield_2019_lme)
+summary(glht(yield_2019_lme, linfct = mcp(treatment = "Tukey")))
+#cints <- (confint(glht(yield_2019_lme, linfct = mcp(treatment = "Tukey"))))[10]
+#data.frame(cints)
+```
+
+#### Specific weight 2018
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+lme_summary <- function(fix_form, data) {
+  res_lme <- lme(fix_form, random = ~ 1 | farm, data=data)
+  print(summary(res_lme))
+  print(summary(glht(res_lme, linfct = mcp(treatment = "Tukey"))))
+#  cints <- (confint(glht(res_lme, linfct = mcp(treatment = "Tukey"))))[10]
+#  data.frame(cints)
+}
+
+lme_summary(formula(sp_wght ~ treatment), data=crop_data_2018)
+```
+
+#### Specific weight 2019
+```{r echo=FALSE}
+lme_summary(formula(sp_wght ~ treatment), data=crop_data_2019)
+```
+
+#### Moisture 2018
+```{r echo=FALSE}
+lme_summary(formula(moisture ~ treatment), data=crop_data_2018)
+```
+
+#### Moisture 2019
+```{r echo=FALSE}
+lme_summary(formula(moisture ~ treatment), data=crop_data_2019)
+```
+
+#### Nitrogen 2018
+```{r echo=FALSE}
+lme_summary(formula(N ~ treatment), data=crop_data_2018)
+```
+
+#### Nitrogen 2019
+Only available for STC in 2019 therefore linear model rather than mixed-effects model.
+```{r echo=FALSE}
+#lme_summary(formula(N ~ treatment), data=crop_data_2019)
+n_2019_lm <- lm(N ~ treatment, data=crop_data_2019[1:15,]) # only stc
+summary(n_2019_lm)
+summary(glht(n_2019_lm, linfct = mcp(treatment = "Tukey")))
+#cints <- (confint(glht(n_2019_lm, linfct = mcp(treatment = "Tukey"))))[10]
+#data.frame(cints)
+```
+
+#### Protein 2018
+```{r echo=FALSE}
+lme_summary(formula(protein ~ treatment), data=crop_data_2018)
+```
+
+#### Protein 2019
+```{r echo=FALSE}
+lme_summary(formula(protein ~ treatment), data=crop_data_2019)
+```
