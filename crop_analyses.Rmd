@@ -590,9 +590,9 @@ p4 <- filter(disease_lng, health == "greenleafarea" & gs == "GS71") %>%
 multiplot(p1, p2, p3, p4, cols=2)
 ```
 
-Changes over time
+Changes over time for Septoria
 
-```{r}
+```{r, message=FALSE}
 tmp <- filter(disease_lng, health == "septoria") %>%
   group_by(treatment, date) %>% 
   summarise(
@@ -605,7 +605,8 @@ p1 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=treatment)) +
   geom_line() + 
   geom_errorbar(aes(ymin = meanpcnt - sepcnt,
                     ymax = meanpcnt + sepcnt,
-                    width = 0.5))
+                    width = 0.5)) +
+  ylab("Septoria (%)")
 
 tmp <- filter(disease_lng, health == "septoria") %>%
   group_by(N, date) %>% 
@@ -619,7 +620,110 @@ p2 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=N)) +
   geom_line() + 
   geom_errorbar(aes(ymin = meanpcnt - sepcnt,
                     ymax = meanpcnt + sepcnt,
-                    width = 0.5))
+                    width = 0.5)) +
+  ylab("Septoria (%)")
 multiplot(p1, p2, cols=2)
 ```
 
+Changes over time for yellow rust
+
+```{r, message=FALSE}
+tmp <- filter(disease_lng, health == "yellowrust") %>%
+  group_by(treatment, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p1 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=treatment)) +
+  geom_point() +
+  geom_line() + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5)) +
+  ylab("Yellow rust (%)")
+
+tmp <- filter(disease_lng, health == "yellowrust") %>%
+  group_by(N, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p2 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=N)) +
+  geom_point() +
+  geom_line()  + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5)) +
+  ylab("Yellow rust (%)")
+multiplot(p1, p2, cols=2)
+```
+
+Changes over time for mildew
+```{r, message=FALSE}
+tmp <- filter(disease_lng, health == "mildew") %>%
+  group_by(treatment, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p1 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=treatment)) +
+  geom_point() +
+  geom_line() + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5)) +
+  ylab("Mildew (%)")
+
+tmp <- filter(disease_lng, health == "yellowrust") %>%
+  group_by(N, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p2 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=N)) +
+  geom_point() +
+  geom_line()  + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5)) +
+  ylab("Mildew (%)")
+multiplot(p1, p2, cols=2)
+```
+
+Changes over time for green leaf area
+```{r, message=FALSE}
+tmp <- filter(disease_lng, health == "greenleafarea") %>%
+  group_by(treatment, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p1 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=treatment)) +
+  geom_point() +
+  geom_line() + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5)) +
+  ylab("Green leaf area (%)")
+
+tmp <- filter(disease_lng, health == "greenleafarea") %>%
+  group_by(N, date) %>% 
+  summarise(
+    meanpcnt = mean(pcnt, na.rm = TRUE),
+    sepcnt = sd(pcnt, na.rm = TRUE)/sqrt(n())
+  )
+  
+p2 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=N)) +
+  geom_point() +
+  geom_line()  + 
+  geom_errorbar(aes(ymin = meanpcnt - sepcnt,
+                    ymax = meanpcnt + sepcnt,
+                    width = 0.5)) +
+  ylab("Green leaf area (%)")
+multiplot(p1, p2, cols=2)
+```
