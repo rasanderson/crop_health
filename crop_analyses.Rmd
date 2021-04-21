@@ -2,8 +2,8 @@
 title: "Crop data analyses"
 author: "Roy Sanderson"
 output:
-  html_document: default
   word_document: default
+  html_document: default
   pdf_document: default
 ---
 
@@ -15,7 +15,7 @@ source("multi_plot.R")
 ## Background
 Analyses for the "CHN 2020 STC data including N rates.xlsx" spreadsheet separated by year (2018 or 2019) and use farm as a random effect. Multiple comparison tests also included to show differences between management treatments.
 
-For the data in "CHN 2020 STC data including N rates.xlsx" the design is vaguely like a randomised-block design, in that each column of 3 plots has all three management types randomly assigned. However, the nitrogen treatments are applied in a line. Thus, if the analysis is done separately, for each N treatment, it could be analysed as a randomised block design. However, I'm assuming that both N and management regime (bio, ipm, conv) are of interest. As such, this is not a true randomised block design, and therefore this has been analysed as a fully-randomised setup. However the growth stage (date) can be used as a random effect. As the last growth stage (GS89, 30th July 2020) merely records height, this has been ignored.
+For the data in "CHN 2020 STC data including N rates.xlsx" the design is vaguely like a randomised-block design, in that each column of 3 plots has all three management types randomly assigned. However, the nitrogen treatments are applied in a line. Thus, if the analysis is done separately, for each N treatment, it could be analysed as a randomised block design. However, I'm assuming that both N and management regime (bio, ipm, conv) are of interest. As such, this is not a true randomised block design, and therefore this has been analysed as a fully-randomised setup with binomial GLM (response are percentage disease). The growth stage could be used as either a fixed- or random-effect (for the latter, a categorical class). I've chosen to use a fixed effect, as there were in some plots trends of disease going up or down over time (all interactions initially fitted). However, in practice this proved not significant, although would need to explore the data further. As the last growth stage (GS89, 30th July 2020) merely records height, this has been ignored.
 
 ```{r crop data 2018 and 2019, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -202,7 +202,6 @@ disease_cp_2019$treatment <- as.factor(disease_cp_2019$treatment)
 
 ```
 
-Data are a bit of a mess, especially disease. Probably sensible to convert everything to tidy format to make easier to manage.
 
 ```{r disease tidy 2018, echo=FALSE, message=FALSE}
 disease_cpnf_2018_lng <- pivot_longer(disease_cpnf_2018,
@@ -230,7 +229,7 @@ disease_stc_2018_lng <- disease_stc_2018_lng %>%
 disease_2018 <- rbind(disease_cpnf_2018_lng, disease_stc_2018_lng)
 ```
 
-Do the same for 2019
+
 
 ```{r disease tidy 2019, echo=FALSE, message=FALSE}
 disease_cp_2019_lng <- pivot_longer(disease_cp_2019,
@@ -258,7 +257,7 @@ disease_stc_2019_lng <- disease_stc_2019_lng %>%
 disease_2019 <- rbind(disease_cp_2019_lng, disease_stc_2019_lng)
 ```
 
-May as well merge into one data.frame for both years if needed
+
 
 ```{r merge disease years, echo=FALSE, message=FALSE}
 disease <- rbind(disease_2018, disease_2019)
@@ -592,7 +591,7 @@ multiplot(p1, p2, p3, p4, cols=2)
 
 Changes over time for Septoria
 
-```{r, message=FALSE}
+```{r, message=FALSE, echo=FALSE}
 tmp <- filter(disease_lng, health == "septoria") %>%
   group_by(treatment, date) %>% 
   summarise(
@@ -627,7 +626,7 @@ multiplot(p1, p2, cols=2)
 
 Changes over time for yellow rust
 
-```{r, message=FALSE}
+```{r, message=FALSE, echo=FALSE}
 tmp <- filter(disease_lng, health == "yellowrust") %>%
   group_by(treatment, date) %>% 
   summarise(
@@ -661,7 +660,8 @@ multiplot(p1, p2, cols=2)
 ```
 
 Changes over time for mildew
-```{r, message=FALSE}
+
+```{r, message=FALSE, echo=FALSE}
 tmp <- filter(disease_lng, health == "mildew") %>%
   group_by(treatment, date) %>% 
   summarise(
@@ -695,7 +695,8 @@ multiplot(p1, p2, cols=2)
 ```
 
 Changes over time for green leaf area
-```{r, message=FALSE}
+
+```{r, message=FALSE, echo=FALSE}
 tmp <- filter(disease_lng, health == "greenleafarea") %>%
   group_by(treatment, date) %>% 
   summarise(
@@ -727,3 +728,60 @@ p2 <- ggplot(tmp, aes(x = date, y = meanpcnt, colour=N)) +
   ylab("Green leaf area (%)")
 multiplot(p1, p2, cols=2)
 ```
+
+### Generalised linear models of disease at STC
+These data are not ideal for analysis due to the pseudo-blocking setup. So mixed-effects models don't really work properly here, and not ideal for a repeated-measures model. To get round the problem, a full binomial GLM model with 3 main effects + 2-level interactions + 3-level interaction is created first, then gradually simplifed.
+
+**Septoria** No significant treatment, N or date effects. No significant higher-level interactions (not shown).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(lubridate)
+disease_lng <- disease_lng[!is.na(disease_lng$pcnt),]
+disease_lng$plotno <- as.factor(disease_lng$plotno)
+disease_lng <- mutate(disease_lng, prop = pcnt/100)
+disease_lng <- mutate(disease_lng, dayno = yday(date))
+
+septoria <- filter(disease_lng, health == "septoria")
+septoria_glm1 <- glm(prop ~ treatment * N * dayno, data=septoria, family="binomial")
+septoria_glm2 <- update(septoria_glm1, . ~ . - treatment:N:dayno)
+#anova(septoria_glm1, septoria_glm2, test="Chi")
+septoria_glm3 <- update(septoria_glm2, . ~ . - treatment:dayno)
+#anova(septoria_glm2, septoria_glm3, test="Chi")
+septoria_glm4 <- update(septoria_glm3, . ~ . - N:dayno)
+#anova(septoria_glm3, septoria_glm4, test="Chi")
+septoria_glm5 <- update(septoria_glm4, . ~ . - treatment:N)
+#anova(septoria_glm4, septoria_glm5, test="Chi")
+summary(septoria_glm5)
+```
+
+**Mildew** No significant treatment, N or date effects. No significant higher-level interactions (not shown).
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+mildew <- filter(disease_lng, health == "mildew")
+mildew_glm1 <- glm(prop ~ treatment * N * dayno, data=mildew, family="binomial")
+mildew_glm2 <- update(mildew_glm1, . ~ . - treatment:N:dayno)
+#anova(mildew_glm1, mildew_glm2, test="Chi")
+mildew_glm3 <- update(mildew_glm2, . ~ . - treatment:dayno)
+#anova(mildew_glm2, mildew_glm3, test="Chi")
+mildew_glm4 <- update(mildew_glm3, . ~ . - N:dayno)
+#anova(mildew_glm3, mildew_glm4, test="Chi")
+mildew_glm5 <- update(mildew_glm4, . ~ . - treatment:N)
+#anova(mildew_glm4, mildew_glm5, test="Chi")
+summary(mildew_glm5)
+```
+
+
+**Yellow rust** No significant treatment, N or date effects. No significant higher-level interactions (not shown).
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+yellowrust <- filter(disease_lng, health == "yellowrust")
+yellowrust_glm1 <- glm(prop ~ treatment * N * dayno, data=yellowrust, family="binomial")
+yellowrust_glm2 <- update(yellowrust_glm1, . ~ . - treatment:N:dayno)
+#anova(yellowrust_glm1, yellowrust_glm2, test="Chi")
+yellowrust_glm3 <- update(yellowrust_glm2, . ~ . - treatment:dayno)
+#anova(yellowrust_glm2, yellowrust_glm3, test="Chi")
+yellowrust_glm4 <- update(yellowrust_glm3, . ~ . - N:dayno)
+#anova(yellowrust_glm3, yellowrust_glm4, test="Chi")
+yellowrust_glm5 <- update(yellowrust_glm4, . ~ . - treatment:N)
+#anova(yellowrust_glm4, yellowrust_glm5, test="Chi")
+summary(yellowrust_glm5)
+```
+
