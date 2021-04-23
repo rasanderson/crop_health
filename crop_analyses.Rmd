@@ -315,7 +315,9 @@ multiplot(p1, p2, cols=2)
 ```
 
 ## Linear mixed models
-Treat farm as a random variable, as presumably it is treatment effects that are of interest.
+Treat farm as a random variable, as presumably it is treatment effects that are of interest. R by default does a sequential analysis. Hence, in the output of the results below the `(Intercept)` estimate is actually the mean value for the biological control `bio`. It treats this as the baseline simply because `b` is first in the alphabet. The estimate values labelled as `treatmentconv` and `treatmentipm` actually show the differences from the baseline biological control value. Hence the p-value for `(Intercept)` is to test whether the biological control differs from zero (which it always does, hence highly significant). The other two p-values show whether the differences for conventional and IPM from the biological are significant. This is a little confusing, hence I've added the multiple comparison tests.
+
+Strictly-speaking an Analysis of Deviance table is better for a mixed-effect model than an ANOVA table, but in practical terms for a simple example like this, with only one fixed-effect, an ANOVA table is fine. The `(Intercept)` estimate is merely the overall grand mean, so can be ignored, it is the line marked as `treatment` that matters.
 
 ### Yield
 #### Yield 2018
@@ -323,8 +325,15 @@ Treat farm as a random variable, as presumably it is treatment effects that are 
 library(nlme)
 library(multcomp)
 library(effects)
+
 yield_2018_lme <- lme(yield ~ treatment, random = ~ 1 | farm, data=crop_data_2018)
 summary(yield_2018_lme)
+```
+
+So here, the overall yield for biological control is `r as.numeric(summary(yield_2018_lme)$coefficients$fixed[1])` and the difference for the conventional is `r as.numeric(summary(yield_2018_lme)$coefficients$fixed[2])`. Hence the overall yield for the conventional is `r as.numeric(summary(yield_2018_lme)$coefficients$fixed[1]) + as.numeric(summary(yield_2018_lme)$coefficients$fixed[2])` and similarly for IPM, which differs from the biological by `r as.numeric(summary(yield_2018_lme)$coefficients$fixed[3])` thus the IPM yield is `r as.numeric(summary(yield_2018_lme)$coefficients$fixed[1]) + as.numeric(summary(yield_2018_lme)$coefficients$fixed[3])`
+
+```{r mixed models2, echo=FALSE, warning=FALSE, message=FALSE}
+anova(yield_2018_lme)
 summary(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey")))
 #cints <- (confint(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey"))))[[10]]
 #data.frame(cints) # Neater printing
@@ -335,6 +344,7 @@ summary(glht(yield_2018_lme, linfct = mcp(treatment = "Tukey")))
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 yield_2019_lme <- lme(yield ~ treatment, random = ~ 1 | farm, data=crop_data_2019)
 summary(yield_2019_lme)
+anova(yield_2019_lme)
 summary(glht(yield_2019_lme, linfct = mcp(treatment = "Tukey")))
 #cints <- (confint(glht(yield_2019_lme, linfct = mcp(treatment = "Tukey"))))[10]
 #data.frame(cints)
@@ -346,6 +356,7 @@ summary(glht(yield_2019_lme, linfct = mcp(treatment = "Tukey")))
 lme_summary <- function(fix_form, data) {
   res_lme <- lme(fix_form, random = ~ 1 | farm, data=data)
   print(summary(res_lme))
+  print(anova(res_lme))
   print(summary(glht(res_lme, linfct = mcp(treatment = "Tukey"))))
 #  cints <- (confint(glht(res_lme, linfct = mcp(treatment = "Tukey"))))[10]
 #  data.frame(cints)
@@ -807,6 +818,8 @@ anova(dm_lm)
 anova(dm_lm2)
 ```
 
+There appears to be a significant effect of N application on dry matter, with as you might expect, higher dry matter with higher N. The treatment:N interactions probably reflects the fact that at low N the conventional management gives the highest DM, whereas at high N the conventional management gives the lowest DM of the three regimes.
+
 **Specific weight**
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
@@ -841,6 +854,8 @@ summary(n_content_lm2)
 summary(glht(n_content_lm2, linfct = mcp(treatment = "Tukey")))
 ```
 
+As you would expect, grain nitrogen content is highest with the highest N application rate. The significant interaction term reflects the fact that at low and medium N application the IPM management has lowest grain nitrogen, whereas at high N application the IPM has highest grain nitrogen content.
+
 **Protein content**
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
@@ -857,3 +872,4 @@ summary(protein_content_lm2)
 summary(glht(protein_content_lm2, linfct = mcp(treatment = "Tukey")))
 ```
 
+Here both main effects and the interaction terms are significant. Highest protein content with highest N application, and overall the highest protein with conventional and lowest with IPM management. However, the interaction term is significant, and at the highest N application rate the protein content is actually highest in IPM.
