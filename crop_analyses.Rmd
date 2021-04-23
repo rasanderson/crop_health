@@ -785,3 +785,75 @@ yellowrust_glm5 <- update(yellowrust_glm4, . ~ . - treatment:N)
 summary(yellowrust_glm5)
 ```
 
+### STC 2020 crop data
+Various analyses for yield, specific weight, thousand grain weight, nitrogen content etc. Note that nitrogen application `N` is coded as a factor, rather than a continuous variable, as the spreadsheet is inconsistent in the actual amounts applied. When it is coded as a continuous numeric variable, there are more degrees of freedom for error (F~5,30~ rather than F~8,27~) as fewer coefficients need to be estimated. This has an effect on the p-values, i.e. some are significant if N is continuous (coded as numbers 1, 2, 3) but non-significant as factors (N with levels "1", "2", "3"). Ideally the true N values as continuous numeric variables (120, 140 etc.) would be used in the analysis rather than 1,2,3.
+
+**Yield**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+# As these are balanced designs, no need for car::Anova as results the same
+yield_lm  <- lm(yield ~ treatment * N, data=yield_quality)
+yield_lm2 <- lm(yield ~ treatment * as.numeric(N), data=yield_quality)
+anova(yield_lm)
+anova(yield_lm2)
+```
+
+**Dry matter**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+dm_lm  <- lm(dm ~ treatment * N, data=yield_quality)
+dm_lm2 <- lm(dm ~ treatment * as.numeric(N), data=yield_quality)
+anova(dm_lm)
+anova(dm_lm2)
+```
+
+**Specific weight**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+sp_wght_lm  <- lm(sp_wght ~ treatment * N, data=yield_quality)
+sp_wght_lm2 <- lm(sp_wght ~ treatment * as.numeric(N), data=yield_quality)
+anova(sp_wght_lm)
+anova(sp_wght_lm2)
+```
+
+**Thousand grain weight**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+tgw_lm  <- lm(tgw ~ treatment * N, data=yield_quality)
+tgw_lm2 <- lm(tgw ~ treatment * as.numeric(N), data=yield_quality)
+anova(tgw_lm)
+anova(tgw_lm2)
+```
+
+**Nitrogen content**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+n_content_lm  <- lm(n_content ~ treatment * N, data=yield_quality)
+n_content_lm2 <- lm(n_content ~ treatment * as.numeric(N), data=yield_quality)
+anova(n_content_lm)
+anova(n_content_lm2)
+```
+
+Obvious differences in nitrogen content. Post-hoc tests (with N application considered as continuous numeric 1,2,3).
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(n_content_lm2)
+summary(glht(n_content_lm2, linfct = mcp(treatment = "Tukey")))
+```
+
+**Protein content**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+protein_content_lm  <- lm(protein_content ~ treatment * N, data=yield_quality)
+protein_content_lm2 <- lm(protein_content ~ treatment * as.numeric(N), data=yield_quality)
+anova(protein_content_lm)
+anova(protein_content_lm2)
+```
+
+Again, significant differences in protein content (including both main effects and the interaction term). Multiple comparison tests on treatment (with N considered continuous numeric 1,2,3)
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(protein_content_lm2)
+summary(glht(protein_content_lm2, linfct = mcp(treatment = "Tukey")))
+```
+
