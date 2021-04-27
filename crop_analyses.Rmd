@@ -317,7 +317,7 @@ multiplot(p1, p2, cols=2)
 ## Linear mixed models
 Treat farm as a random variable, as presumably it is treatment effects that are of interest. R by default does a sequential analysis. Hence, in the output of the results below the `(Intercept)` estimate is actually the mean value for the biological control `bio`. It treats this as the baseline simply because `b` is first in the alphabet. The estimate values labelled as `treatmentconv` and `treatmentipm` actually show the differences from the baseline biological control value. Hence the p-value for `(Intercept)` is to test whether the biological control differs from zero (which it always does, hence highly significant). The other two p-values show whether the differences for conventional and IPM from the biological are significant. This is a little confusing, hence I've added the multiple comparison tests.
 
-Strictly-speaking an Analysis of Deviance table is better for a mixed-effect model than an ANOVA table, but in practical terms for a simple example like this, with only one fixed-effect, an ANOVA table is fine. The `(Intercept)` estimate is merely the overall grand mean, so can be ignored, it is the line marked as `treatment` that matters.
+Strictly-speaking an Analysis of Deviance table is better for a mixed-effect model than an ANOVA table, but in practical terms for a simple example like this, with only one fixed-effect, an ANOVA table is fine. The `(Intercept)` estimate is merely the overall grand mean, so can be ignored, it is the line marked as `treatment` that matters. Where `variety` is included as a covariable, contrasts in the Tukey tests are for main-effects only.
 
 ### Yield
 #### Yield 2018
@@ -326,7 +326,7 @@ library(nlme)
 library(multcomp)
 library(effects)
 
-yield_2018_lme <- lme(yield ~ treatment, random = ~ 1 | farm, data=crop_data_2018)
+yield_2018_lme <- lme(yield ~ treatment * variety, random = ~ 1 | farm, data=crop_data_2018)
 summary(yield_2018_lme)
 ```
 
@@ -362,7 +362,7 @@ lme_summary <- function(fix_form, data) {
 #  data.frame(cints)
 }
 
-lme_summary(formula(sp_wght ~ treatment), data=crop_data_2018)
+lme_summary(formula(sp_wght ~ treatment * variety), data=crop_data_2018)
 ```
 
 #### Specific weight 2019
@@ -372,7 +372,7 @@ lme_summary(formula(sp_wght ~ treatment), data=crop_data_2019)
 
 #### Moisture 2018
 ```{r echo=FALSE}
-lme_summary(formula(moisture ~ treatment), data=crop_data_2018)
+lme_summary(formula(moisture ~ treatment * variety), data=crop_data_2018)
 ```
 
 #### Moisture 2019
@@ -382,7 +382,7 @@ lme_summary(formula(moisture ~ treatment), data=crop_data_2019)
 
 #### Nitrogen 2018
 ```{r echo=FALSE}
-lme_summary(formula(N ~ treatment), data=crop_data_2018)
+lme_summary(formula(N ~ treatment * variety), data=crop_data_2018)
 ```
 
 #### Nitrogen 2019
@@ -398,12 +398,48 @@ summary(glht(n_2019_lm, linfct = mcp(treatment = "Tukey")))
 
 #### Protein 2018
 ```{r echo=FALSE}
-lme_summary(formula(protein ~ treatment), data=crop_data_2018)
+lme_summary(formula(protein ~ treatment * variety), data=crop_data_2018)
 ```
 
 #### Protein 2019
 ```{r echo=FALSE}
 lme_summary(formula(protein ~ treatment), data=crop_data_2019)
+```
+
+### Disease summaries 2018 and 2019
+```{r echo=FALSE}
+septoria_2018 <- filter(disease_2018, pathogen == "septoria")
+septoria_2019 <- filter(disease_2019, pathogen == "septoria")
+mildew_2018   <- filter(disease_2018, pathogen == "mildew")
+
+p1 <- ggplot(septoria_2018, aes(x = farm, y=severity, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Septoria 2018")
+p2 <- ggplot(septoria_2019, aes(x = farm, y=severity, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("Septoria 2019")
+p3 <- ggplot(mildew_2018, aes(x = farm, y=severity, colour=treatment)) +
+  geom_boxplot() +
+  ggtitle("mildew_2018")
+
+multiplot(p1, p2, p3, cols=2)
+
+```
+
+
+#### Septoria 2018
+```{r echo=FALSE}
+lme_summary(formula(severity ~ treatment * variety), data=septoria_2018)
+```
+
+#### Septoria 2019
+```{r echo=FALSE}
+lme_summary(formula(severity ~ treatment), data=septoria_2019)
+```
+
+#### Mildew 2018
+```{r echo=FALSE}
+lme_summary(formula(severity ~ treatment * variety), data=mildew_2018)
 ```
 
 ## STC 2020 data analysis
