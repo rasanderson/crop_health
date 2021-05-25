@@ -2,8 +2,8 @@
 title: "Crop data analyses"
 author: "Roy Sanderson"
 output:
-  word_document: default
   html_document: default
+  word_document: default
   pdf_document: default
 ---
 
@@ -909,3 +909,12 @@ summary(glht(protein_content_lm2, linfct = mcp(treatment = "Tukey")))
 ```
 
 Here both main effects and the interaction terms are significant. Highest protein content with highest N application, and overall the highest protein with conventional and lowest with IPM management. However, the interaction term is significant, and at the highest N application rate the protein content is actually highest in IPM.
+
+**Moisture**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+moisture_lm  <- lm(moisture ~ treatment * N, data=yield_quality)
+moisture_lm2 <- lm(moisture ~ treatment * as.numeric(N), data=yield_quality)
+anova(moisture_lm)
+anova(moisture_lm2)
+```
